@@ -22,3 +22,5 @@ build/
 
 # IDE files (optional but good)
 .vscode/
+
+backend/data/
