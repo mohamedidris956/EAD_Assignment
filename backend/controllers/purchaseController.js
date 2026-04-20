@@ -1,4 +1,5 @@
 const Purchase = require("../models/Purchase");
+const Artwork = require("../models/Artwork");
 
 // CREATE purchase
 exports.createPurchase = async (req, res) => {
@@ -18,14 +19,27 @@ exports.createPurchase = async (req, res) => {
   }
 };
 
-// GET purchases by user
+// GET purchases with artwork details
 exports.getUserPurchases = async (req, res) => {
   try {
     const purchases = await Purchase.find({
       userId: req.params.userId
     });
 
-    res.json(purchases);
+    const result = await Promise.all(
+      purchases.map(async (p) => {
+        const artwork = await Artwork.findById(p.artworkId);
+
+        return {
+          _id: p._id,
+          purchaseDate: p.purchaseDate,
+          artworkTitle: artwork?.title || "Unknown",
+          artworkArtist: artwork?.artist || "Unknown"
+        };
+      })
+    );
+
+    res.json(result);
 
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -16,7 +16,7 @@ export default function ArtworkCard({ art }: { art: Artwork }) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        userId: "test-user",
+        userId: localStorage.getItem("userId"),
         artworkId: art._id
       })
     });
