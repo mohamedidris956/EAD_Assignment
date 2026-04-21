@@ -10,11 +10,18 @@ type Artwork = {
   category?: string;
   price: number;
   imageUrl?: string;
+  image?: string;
+  imageURL?: string;
+  ImageURL?: string;
+  Image?: string;
 };
 
 export default function ArtworkCard({ art }: { art: Artwork }) {
   const [isBuying, setIsBuying] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [hasImageError, setHasImageError] = useState(false);
+  const imageSrc = art.imageUrl || art.imageURL || art.ImageURL || art.image || art.Image;
+  const shouldShowImage = Boolean(imageSrc) && !hasImageError;
 
   const handleBuy = async () => {
     const userId = localStorage.getItem("userId");
@@ -51,13 +58,14 @@ export default function ArtworkCard({ art }: { art: Artwork }) {
   return (
     <article className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       <div className="mb-4 overflow-hidden rounded-xl bg-slate-100">
-        {art.imageUrl ? (
+        {shouldShowImage ? (
           <img
-            src={art.imageUrl}
+            src={imageSrc}
             alt={art.title}
             className="h-44 w-full object-cover transition duration-300 group-hover:scale-105"
             loading="lazy"
             referrerPolicy="no-referrer"
+            onError={() => setHasImageError(true)}
           />
         ) : (
           <div className="flex h-44 items-center justify-center text-sm text-slate-500">
