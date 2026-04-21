@@ -3,7 +3,7 @@ const Artwork = require("../models/Artwork");
 // GET all artworks
 exports.getArtworks = async (req, res) => {
   try {
-    const artworks = await Artwork.find().limit(100);
+    const artworks = await Artwork.find();
     res.json(artworks);
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -9,6 +9,7 @@ type Artwork = {
   year?: number;
   category?: string;
   price: number;
+  imageUrl?: string;
 };
 
 export default function ArtworkCard({ art }: { art: Artwork }) {
@@ -49,6 +50,22 @@ export default function ArtworkCard({ art }: { art: Artwork }) {
 
   return (
     <article className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+      <div className="mb-4 overflow-hidden rounded-xl bg-slate-100">
+        {art.imageUrl ? (
+          <img
+            src={art.imageUrl}
+            alt={art.title}
+            className="h-44 w-full object-cover transition duration-300 group-hover:scale-105"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div className="flex h-44 items-center justify-center text-sm text-slate-500">
+            No image available
+          </div>
+        )}
+      </div>
+
       <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
         {art.category || "Uncategorized"}
       </p>

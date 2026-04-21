@@ -11,6 +11,7 @@ type Artwork = {
   year?: number;
   price: number;
   category?: string;
+  imageUrl?: string;
 };
 
 export default function Home() {
