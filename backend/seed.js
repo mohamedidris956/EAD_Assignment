@@ -25,6 +25,20 @@ if (!dataPath) {
 
 const data = require(dataPath);
 
+const normalizeImageUrl = (value) => {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return "";
+  }
+
+  const trimmed = value.trim();
+
+  try {
+    return encodeURI(trimmed);
+  } catch {
+    return trimmed;
+  }
+};
+
 const pickImageUrl = (item) => {
   const directImageCandidates = [item.ImageURL, item.ImageUrl, item.imageUrl];
   const directImage = directImageCandidates.find(
@@ -32,7 +46,7 @@ const pickImageUrl = (item) => {
   );
 
   if (directImage) {
-    return directImage.trim();
+    return normalizeImageUrl(directImage);
   }
 
   const genericUrlCandidates = [item.URL, item.Url, item.url];
@@ -46,7 +60,7 @@ const pickImageUrl = (item) => {
 
   const normalized = genericUrl.trim();
   const isLikelyImage = /\.(jpg|jpeg|png|webp|gif|avif)(\?|$)/i.test(normalized);
-  return isLikelyImage ? normalized : "";
+  return isLikelyImage ? normalizeImageUrl(normalized) : "";
 };
 
 const parseYear = (item) => {

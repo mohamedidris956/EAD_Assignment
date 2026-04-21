@@ -4,6 +4,9 @@
   "main": "index.js",
   "scripts": {
     "seed": "node seed.js",
+    "report:images": "node scripts/report-image-coverage.js",
+    "enrich:images": "node scripts/enrich-missing-images.js",
+    "apply:images": "node scripts/apply-enriched-images.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

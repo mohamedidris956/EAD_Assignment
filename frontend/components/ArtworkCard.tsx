@@ -20,7 +20,8 @@ export default function ArtworkCard({ art }: { art: Artwork }) {
   const [isBuying, setIsBuying] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [hasImageError, setHasImageError] = useState(false);
-  const imageSrc = art.imageUrl || art.imageURL || art.ImageURL || art.image || art.Image;
+  const rawImageSrc = art.imageUrl || art.imageURL || art.ImageURL || art.image || art.Image;
+  const imageSrc = rawImageSrc ? encodeURI(rawImageSrc.trim()) : "";
   const shouldShowImage = Boolean(imageSrc) && !hasImageError;
 
   const handleBuy = async () => {
@@ -56,7 +57,7 @@ export default function ArtworkCard({ art }: { art: Artwork }) {
   };
 
   return (
-    <article className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+    <article className="group flex h-[430px] flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       <div className="mb-4 overflow-hidden rounded-xl bg-slate-100">
         {shouldShowImage ? (
           <img
@@ -64,13 +65,15 @@ export default function ArtworkCard({ art }: { art: Artwork }) {
             alt={art.title}
             className="h-44 w-full object-cover transition duration-300 group-hover:scale-105"
             loading="lazy"
-            referrerPolicy="no-referrer"
             onError={() => setHasImageError(true)}
           />
         ) : (
-          <div className="flex h-44 items-center justify-center text-sm text-slate-500">
-            No image available
-          </div>
+          <img
+            src="/artwork-placeholder.svg"
+            alt={`Placeholder for ${art.title}`}
+            className="h-44 w-full object-cover"
+            loading="lazy"
+          />
         )}
       </div>
 
@@ -78,10 +81,10 @@ export default function ArtworkCard({ art }: { art: Artwork }) {
         {art.category || "Uncategorized"}
       </p>
       <h2 className="line-clamp-2 text-lg font-semibold text-slate-900">{art.title}</h2>
-      <p className="mt-1 text-sm text-slate-600">{art.artist}</p>
+      <p className="mt-1 line-clamp-1 text-sm text-slate-600">{art.artist}</p>
       <p className="text-sm text-slate-500">{art.year || "Year unknown"}</p>
 
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-auto flex items-center justify-between pt-4">
         <p className="text-xl font-bold text-indigo-600">€{art.price}</p>
         <button
           onClick={handleBuy}
