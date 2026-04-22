@@ -10,7 +10,7 @@ const candidateFiles = [
   "artswork_1000.json",
   "artworks_1000.json",
   "artwork_1000.json",
-  "artworks.json"
+  "Artworks.json"
 ];
 
 const dataPath = candidateFiles

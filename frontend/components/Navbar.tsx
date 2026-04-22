@@ -11,16 +11,12 @@ const baseLinks = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [userName, setUserName] = useState(() => {
-    if (typeof window === "undefined") {
-      return "";
-    }
-
-    return localStorage.getItem("userName") || "";
-  });
+  const [userName, setUserName] = useState("");
 
   useEffect(() => {
     const syncAuthState = () => setUserName(localStorage.getItem("userName") || "");
+
+    syncAuthState();
 
     const onStorage = () => syncAuthState();
     const onAuthChanged = () => syncAuthState();
