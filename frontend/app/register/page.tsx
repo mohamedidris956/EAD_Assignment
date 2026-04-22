@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -11,6 +13,24 @@ export default function RegisterPage() {
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const handleRegister = async () => {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!trimmedName || !trimmedEmail || !password) {
+      setFeedback({ type: "error", text: "Name, email, and password are required." });
+      return;
+    }
+
+    if (!emailRegex.test(trimmedEmail)) {
+      setFeedback({ type: "error", text: "Please enter a valid email address." });
+      return;
+    }
+
+    if (password.length < 6) {
+      setFeedback({ type: "error", text: "Password must be at least 6 characters long." });
+      return;
+    }
+
     try {
       setIsLoading(true);
       setFeedback(null);
@@ -20,21 +40,22 @@ export default function RegisterPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name: trimmedName, email: trimmedEmail, password }),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data._id) {
-        throw new Error("Registration failed");
+        throw new Error(data.message || "Registration failed");
       }
 
       setFeedback({ type: "success", text: "Registered successfully! You can now login." });
       setName("");
       setEmail("");
       setPassword("");
-    } catch {
-      setFeedback({ type: "error", text: "Registration failed. Please try a different email." });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Registration failed. Please try again.";
+      setFeedback({ type: "error", text: message });
     } finally {
       setIsLoading(false);
     }

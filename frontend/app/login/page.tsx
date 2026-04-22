@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -10,29 +12,44 @@ export default function LoginPage() {
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const handleLogin = async () => {
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!trimmedEmail || !password) {
+      setFeedback({ type: "error", text: "Email and password are required." });
+      return;
+    }
+
+    if (!emailRegex.test(trimmedEmail)) {
+      setFeedback({ type: "error", text: "Please enter a valid email address." });
+      return;
+    }
+
     try {
       setIsLoading(true);
       setFeedback(null);
 
-    const res = await fetch("http://localhost:3001/api/users/login", {
+      const res = await fetch("http://localhost:3001/api/users/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: trimmedEmail, password }),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data._id) {
-        throw new Error("Invalid credentials");
+        throw new Error(data.message || "Login failed");
       }
 
     
       localStorage.setItem("userId", data._id);
+      localStorage.setItem("userName", data.name || "");
+      window.dispatchEvent(new Event("auth-changed"));
       setFeedback({ type: "success", text: "Login successful! You can now purchase artworks." });
-    } catch {
-      setFeedback({ type: "error", text: "Login failed. Please check your email and password." });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Login failed. Please check your email and password.";
+      setFeedback({ type: "error", text: message });
     } finally {
       setIsLoading(false);
     }
@@ -63,8 +80,7 @@ export default function LoginPage() {
       <button
         onClick={handleLogin}
         disabled={isLoading}
-        className="mt-4 w-full rounded-lg bg-slate-900 py-2.5 font-semibold text-white transition hover:bg-indigo-600 dis
-        abled:cursor-not-allowed disabled:bg-slate-400"
+        className="mt-4 w-full rounded-lg bg-slate-900 py-2.5 font-semibold text-white transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:bg-slate-400"
       >
         {isLoading ? "Signing in..." : "Login"}
       </button>
