@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 const baseLinks = [
   { href: "/", label: "Marketplace" },
   { href: "/profile", label: "Profile" },
+  { href: "/top-spenders", label: "Top Spenders" },
 ];
 
 export default function Navbar() {

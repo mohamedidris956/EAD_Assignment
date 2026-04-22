@@ -1,11 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   createArtwork,
   deleteArtwork,
   fetchArtworks,
-  fetchTopUsers,
   updateArtwork,
 } from "../lib/api";
 import ArtworkCard from "../components/ArtworkCard";
@@ -26,14 +26,6 @@ type ArtworkFormInput = {
   year: string;
   category: string;
   price: string;
-};
-
-type TopUser = {
-  userId: string;
-  name?: string | null;
-  email?: string | null;
-  purchaseCount: number;
-  totalSpent?: number;
 };
 
 const INITIAL_ARTWORK_FORM: ArtworkFormInput = {
@@ -58,10 +50,7 @@ export default function Home() {
   const [artworkForm, setArtworkForm] = useState(INITIAL_ARTWORK_FORM);
   const [isCreating, setIsCreating] = useState(false);
   const [crudFeedback, setCrudFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  const [topUsers, setTopUsers] = useState<TopUser[]>([]);
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [statsError, setStatsError] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const itemsPerPage = 12;
 
@@ -83,20 +72,20 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const loadTopUsers = async () => {
-      try {
-        setStatsLoading(true);
-        setStatsError("");
-        const data = await fetchTopUsers();
-        setTopUsers(data);
-      } catch {
-        setStatsError("Unable to load top users right now.");
-      } finally {
-        setStatsLoading(false);
-      }
-    };
+    const syncAuthState = () => setIsLoggedIn(Boolean(localStorage.getItem("userId")));
 
-    loadTopUsers();
+    syncAuthState();
+
+    const onStorage = () => syncAuthState();
+    const onAuthChanged = () => syncAuthState();
+
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("auth-changed", onAuthChanged);
+
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("auth-changed", onAuthChanged);
+    };
   }, []);
 
   useEffect(() => {
@@ -155,6 +144,11 @@ export default function Home() {
   const handleCreateArtwork = async (event: FormEvent) => {
     event.preventDefault();
 
+    if (!isLoggedIn) {
+      setCrudFeedback({ type: "error", text: "Please log in to add artwork." });
+      return;
+    }
+
     try {
       setIsCreating(true);
       setCrudFeedback(null);
@@ -191,47 +185,60 @@ export default function Home() {
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         <h2 className="mb-3 text-lg font-semibold text-slate-900">Add New Artwork</h2>
+        {!isLoggedIn && (
+          <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            Log in to enable create, edit, and delete actions.
+            <Link href="/login" className="ml-1 font-semibold text-indigo-700 hover:underline">
+              Go to login
+            </Link>
+          </p>
+        )}
         <form onSubmit={handleCreateArtwork} className="grid gap-3 md:grid-cols-3">
           <input
             required
+            disabled={!isLoggedIn}
             placeholder="Title"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:bg-slate-100"
             value={artworkForm.title}
             onChange={(e) => setArtworkForm((prev) => ({ ...prev, title: e.target.value }))}
           />
           <input
             required
+            disabled={!isLoggedIn}
             placeholder="Artist"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:bg-slate-100"
             value={artworkForm.artist}
             onChange={(e) => setArtworkForm((prev) => ({ ...prev, artist: e.target.value }))}
           />
           <input
             type="number"
+            disabled={!isLoggedIn}
             placeholder="Year"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:bg-slate-100"
             value={artworkForm.year}
             onChange={(e) => setArtworkForm((prev) => ({ ...prev, year: e.target.value }))}
           />
           <input
+            disabled={!isLoggedIn}
             placeholder="Category"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:bg-slate-100"
             value={artworkForm.category}
             onChange={(e) => setArtworkForm((prev) => ({ ...prev, category: e.target.value }))}
           />
           <input
             required
+            disabled={!isLoggedIn}
             type="number"
             min="0"
             step="0.01"
             placeholder="Price"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:bg-slate-100"
             value={artworkForm.price}
             onChange={(e) => setArtworkForm((prev) => ({ ...prev, price: e.target.value }))}
           />
           <button
             type="submit"
-            disabled={isCreating}
+            disabled={isCreating || !isLoggedIn}
             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
           >
             {isCreating ? "Adding..." : "Add Artwork"}
@@ -304,39 +311,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <h2 className="text-lg font-semibold text-slate-900">Top Users by Purchases</h2>
-        {statsLoading && <p className="mt-2 text-sm text-slate-500">Loading purchase stats...</p>}
-        {!statsLoading && statsError && <p className="mt-2 text-sm text-rose-600">{statsError}</p>}
-        {!statsLoading && !statsError && topUsers.length === 0 && (
-          <p className="mt-2 text-sm text-slate-500">No purchase data yet.</p>
-        )}
-        {!statsLoading && !statsError && topUsers.length > 0 && (
-          <div className="mt-3 overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-600">
-                  <th className="px-2 py-2">Rank</th>
-                  <th className="px-2 py-2">User</th>
-                  <th className="px-2 py-2">Purchases</th>
-                  <th className="px-2 py-2">Total Spent</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topUsers.map((user, index) => (
-                  <tr key={user.userId} className="border-b border-slate-100">
-                    <td className="px-2 py-2 font-semibold text-slate-700">#{index + 1}</td>
-                    <td className="px-2 py-2 text-slate-700">{user.name || user.email || user.userId}</td>
-                    <td className="px-2 py-2">{user.purchaseCount}</td>
-                    <td className="px-2 py-2">€{Number(user.totalSpent || 0).toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
       {isLoading && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, index) => (
@@ -371,8 +345,8 @@ export default function Home() {
               <ArtworkCard
                 key={art._id}
                 art={art}
-                onUpdate={handleUpdateArtwork}
-                onDelete={handleDeleteArtwork}
+                onUpdate={isLoggedIn ? handleUpdateArtwork : undefined}
+                onDelete={isLoggedIn ? handleDeleteArtwork : undefined}
               />
             ))}
           </div>
