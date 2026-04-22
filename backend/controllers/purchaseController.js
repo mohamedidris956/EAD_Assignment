@@ -1,5 +1,6 @@
 const Purchase = require("../models/Purchase");
 const Artwork = require("../models/Artwork");
+const User = require("../models/User");
 
 // CREATE purchase
 exports.createPurchase = async (req, res) => {
@@ -41,6 +42,47 @@ exports.getUserPurchases = async (req, res) => {
 
     res.json(result);
 
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// GET top users by purchase count
+exports.getTopUsersStats = async (req, res) => {
+  try {
+    const [users, artworks, purchases] = await Promise.all([
+      User.find().select("_id name email"),
+      Artwork.find().select("_id price"),
+      Purchase.find().select("userId artworkId")
+    ]);
+
+    const userMap = new Map(users.map((u) => [u._id.toString(), u]));
+    const artworkPriceMap = new Map(artworks.map((a) => [a._id.toString(), Number(a.price) || 0]));
+    const statsMap = new Map();
+
+    for (const purchase of purchases) {
+      const key = String(purchase.userId);
+      const existing = statsMap.get(key) || { purchaseCount: 0, totalSpent: 0 };
+      existing.purchaseCount += 1;
+      existing.totalSpent += artworkPriceMap.get(String(purchase.artworkId)) || 0;
+      statsMap.set(key, existing);
+    }
+
+    const rankedUsers = Array.from(statsMap.entries())
+      .map(([userId, stats]) => {
+        const user = userMap.get(userId);
+
+        return {
+          userId,
+          name: user?.name || null,
+          email: user?.email || null,
+          purchaseCount: stats.purchaseCount,
+          totalSpent: Number(stats.totalSpent.toFixed(2))
+        };
+      })
+      .sort((a, b) => b.purchaseCount - a.purchaseCount || b.totalSpent - a.totalSpent);
+
+    res.json(rankedUsers);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

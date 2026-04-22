@@ -1,7 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { fetchArtworks } from "../lib/api";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  createArtwork,
+  deleteArtwork,
+  fetchArtworks,
+  fetchTopUsers,
+  updateArtwork,
+} from "../lib/api";
 import ArtworkCard from "../components/ArtworkCard";
 
 type Artwork = {
@@ -12,6 +18,30 @@ type Artwork = {
   price: number;
   category?: string;
   imageUrl?: string;
+};
+
+type ArtworkFormInput = {
+  title: string;
+  artist: string;
+  year: string;
+  category: string;
+  price: string;
+};
+
+type TopUser = {
+  userId: string;
+  name?: string | null;
+  email?: string | null;
+  purchaseCount: number;
+  totalSpent?: number;
+};
+
+const INITIAL_ARTWORK_FORM: ArtworkFormInput = {
+  title: "",
+  artist: "",
+  year: "",
+  category: "",
+  price: "",
 };
 
 export default function Home() {
@@ -25,10 +55,18 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [artworkForm, setArtworkForm] = useState(INITIAL_ARTWORK_FORM);
+  const [isCreating, setIsCreating] = useState(false);
+  const [crudFeedback, setCrudFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const [topUsers, setTopUsers] = useState<TopUser[]>([]);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState("");
+
   const itemsPerPage = 12;
 
   useEffect(() => {
-    const loadArtworks = async () => {
+    const loadData = async () => {
       try {
         setIsLoading(true);
         setError("");
@@ -41,7 +79,24 @@ export default function Home() {
       }
     };
 
-    loadArtworks();
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    const loadTopUsers = async () => {
+      try {
+        setStatsLoading(true);
+        setStatsError("");
+        const data = await fetchTopUsers();
+        setTopUsers(data);
+      } catch {
+        setStatsError("Unable to load top users right now.");
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    loadTopUsers();
   }, []);
 
   useEffect(() => {
@@ -89,6 +144,42 @@ export default function Home() {
     setCurrentPage(1);
   };
 
+  const normalizePayload = (form: ArtworkFormInput) => ({
+    title: form.title.trim(),
+    artist: form.artist.trim(),
+    year: form.year ? Number(form.year) : undefined,
+    category: form.category.trim(),
+    price: Number(form.price),
+  });
+
+  const handleCreateArtwork = async (event: FormEvent) => {
+    event.preventDefault();
+
+    try {
+      setIsCreating(true);
+      setCrudFeedback(null);
+      const created = await createArtwork(normalizePayload(artworkForm));
+      setArtworks((prev) => [created, ...prev]);
+      setArtworkForm(INITIAL_ARTWORK_FORM);
+      setCrudFeedback({ type: "success", text: "Artwork added successfully." });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to add artwork.";
+      setCrudFeedback({ type: "error", text: message });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleUpdateArtwork = async (id: string, form: ArtworkFormInput) => {
+    const updated = await updateArtwork(id, normalizePayload(form));
+    setArtworks((prev) => prev.map((item) => (item._id === id ? updated : item)));
+  };
+
+  const handleDeleteArtwork = async (id: string) => {
+    await deleteArtwork(id);
+    setArtworks((prev) => prev.filter((item) => item._id !== id));
+  };
+
   return (
     <main className="space-y-6">
       <section className="rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-700 p-6 text-white shadow-lg">
@@ -96,6 +187,61 @@ export default function Home() {
         <p className="mt-2 max-w-2xl text-sm text-slate-100 sm:text-base">
           Browse the collection, filter by artist or category, and purchase your favorite pieces.
         </p>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <h2 className="mb-3 text-lg font-semibold text-slate-900">Add New Artwork</h2>
+        <form onSubmit={handleCreateArtwork} className="grid gap-3 md:grid-cols-3">
+          <input
+            required
+            placeholder="Title"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            value={artworkForm.title}
+            onChange={(e) => setArtworkForm((prev) => ({ ...prev, title: e.target.value }))}
+          />
+          <input
+            required
+            placeholder="Artist"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            value={artworkForm.artist}
+            onChange={(e) => setArtworkForm((prev) => ({ ...prev, artist: e.target.value }))}
+          />
+          <input
+            type="number"
+            placeholder="Year"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            value={artworkForm.year}
+            onChange={(e) => setArtworkForm((prev) => ({ ...prev, year: e.target.value }))}
+          />
+          <input
+            placeholder="Category"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            value={artworkForm.category}
+            onChange={(e) => setArtworkForm((prev) => ({ ...prev, category: e.target.value }))}
+          />
+          <input
+            required
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="Price"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            value={artworkForm.price}
+            onChange={(e) => setArtworkForm((prev) => ({ ...prev, price: e.target.value }))}
+          />
+          <button
+            type="submit"
+            disabled={isCreating}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
+          >
+            {isCreating ? "Adding..." : "Add Artwork"}
+          </button>
+        </form>
+        {crudFeedback && (
+          <p className={`mt-2 text-sm ${crudFeedback.type === "success" ? "text-emerald-600" : "text-rose-600"}`}>
+            {crudFeedback.text}
+          </p>
+        )}
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -158,6 +304,39 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <h2 className="text-lg font-semibold text-slate-900">Top Users by Purchases</h2>
+        {statsLoading && <p className="mt-2 text-sm text-slate-500">Loading purchase stats...</p>}
+        {!statsLoading && statsError && <p className="mt-2 text-sm text-rose-600">{statsError}</p>}
+        {!statsLoading && !statsError && topUsers.length === 0 && (
+          <p className="mt-2 text-sm text-slate-500">No purchase data yet.</p>
+        )}
+        {!statsLoading && !statsError && topUsers.length > 0 && (
+          <div className="mt-3 overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-600">
+                  <th className="px-2 py-2">Rank</th>
+                  <th className="px-2 py-2">User</th>
+                  <th className="px-2 py-2">Purchases</th>
+                  <th className="px-2 py-2">Total Spent</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topUsers.map((user, index) => (
+                  <tr key={user.userId} className="border-b border-slate-100">
+                    <td className="px-2 py-2 font-semibold text-slate-700">#{index + 1}</td>
+                    <td className="px-2 py-2 text-slate-700">{user.name || user.email || user.userId}</td>
+                    <td className="px-2 py-2">{user.purchaseCount}</td>
+                    <td className="px-2 py-2">€{Number(user.totalSpent || 0).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       {isLoading && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, index) => (
@@ -189,7 +368,12 @@ export default function Home() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {paginatedArtworks.map((art) => (
-              <ArtworkCard key={art._id} art={art} />
+              <ArtworkCard
+                key={art._id}
+                art={art}
+                onUpdate={handleUpdateArtwork}
+                onDelete={handleDeleteArtwork}
+              />
             ))}
           </div>
 
