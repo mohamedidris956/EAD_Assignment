@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About this page | Art Marketplace</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f8fafc;
+        --card: #ffffff;
+        --text: #0f172a;
+        --muted: #334155;
+        --accent: #4338ca;
+        --border: #cbd5e1;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        background: linear-gradient(180deg, #eef2ff, var(--bg));
+        color: var(--text);
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 2rem 1rem 3rem;
+      }
+      h1 { margin-bottom: 0.35rem; }
+      .subtitle { color: var(--muted); margin-top: 0; }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.25rem;
+        margin-top: 1rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      }
+      h2 { margin-top: 0; }
+      ul { margin: 0.5rem 0 0; padding-left: 1.1rem; }
+      li { margin-bottom: 0.5rem; }
+      .diagram {
+        border: 1px dashed #94a3b8;
+        border-radius: 10px;
+        padding: 1rem;
+        overflow-x: auto;
+        background: #f8fafc;
+      }
+      code {
+        background: #e2e8f0;
+        border-radius: 6px;
+        padding: 0.1rem 0.35rem;
+      }
+      .back-link {
+        display: inline-block;
+        margin-top: 1.5rem;
+        text-decoration: none;
+        color: white;
+        background: var(--accent);
+        border-radius: 999px;
+        padding: 0.6rem 1rem;
+        font-weight: 600;
+      }
+      .back-link:hover { opacity: 0.93; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>About this page</h1>
+      <p class="subtitle">How the Art Marketplace is structured and what can be improved.</p>
+
+      <section class="card">
+        <h2>How the application works</h2>
+        <p>
+          Users browse artwork on the marketplace page. The frontend fetches artwork data, allows filtering,
+          and (for authenticated users) supports creating, editing, and deleting artwork entries.
+          Purchases and top spender statistics are handled through dedicated backend endpoints.
+        </p>
+        <div class="diagram" aria-label="Application architecture diagram">
+<pre>
+[Browser / Next.js Frontend]
+           |
+           | HTTP requests (JSON)
+           v
+     [Express Backend API]
+      /        |         \
+ /api/artworks | /api/users | /api/purchases
+           |
+           v
+      [MongoDB Database]
+</pre>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Technologies used</h2>
+        <ul>
+          <li><strong>Frontend:</strong> Next.js (App Router), React, TypeScript, Tailwind CSS.</li>
+          <li><strong>Backend:</strong> Node.js with Express for REST API endpoints.</li>
+          <li><strong>Database:</strong> MongoDB with Mongoose models and schemas.</li>
+          <li><strong>Data exchange:</strong> JSON over HTTP using the Fetch API.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Main limitations in this implementation</h2>
+        <ul>
+          <li>Authentication uses browser storage without robust token/session hardening.</li>
+          <li>The API base URL is currently fixed, making deployment configuration less flexible.</li>
+          <li>Authorization is limited; sensitive operations should be protected server-side per role.</li>
+          <li>Validation and error handling can be expanded for edge cases and better user feedback.</li>
+          <li>No automated end-to-end tests are currently enforcing full user journeys.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Alternative approaches</h2>
+        <ul>
+          <li>Use <strong>Next.js API routes</strong> or a monorepo BFF instead of a separate Express server.</li>
+          <li>Use <strong>PostgreSQL</strong> with Prisma for relational data constraints and migrations.</li>
+          <li>Use <strong>JWT + refresh tokens</strong> or session-based auth with secure cookies.</li>
+          <li>Use <strong>GraphQL</strong> for flexible client queries where shape variability is high.</li>
+          <li>Add infrastructure like Redis caching and background jobs for scale-oriented workloads.</li>
+        </ul>
+      </section>
+
+      <a class="back-link" href="http://localhost:3000/">← Back to marketplace</a>
+    </main>
+  </body>
+</html>

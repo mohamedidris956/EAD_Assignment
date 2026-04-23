@@ -21,9 +21,15 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error(err));
 
+  const path = require("path");
+
 // test route
 app.get("/", (req, res) => {
   res.send("API is running");
+});
+
+app.get("/about-this-page", (req, res) => {
+  res.sendFile(path.join(__dirname, "public-about.html"));
 });
 
 // start server

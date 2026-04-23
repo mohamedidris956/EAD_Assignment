@@ -10,6 +10,8 @@ const baseLinks = [
   { href: "/top-spenders", label: "Top Spenders" },
 ];
 
+const ABOUT_PAGE_URL = "http://localhost:3001/about-this-page";
+
 export default function Navbar() {
   const pathname = usePathname();
   const [userName, setUserName] = useState("");
@@ -48,9 +50,17 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/85 backdrop-blur-md">
       <nav className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-        <Link href="/" className="text-lg font-bold tracking-tight text-slate-900">
-          🎨 Art Marketplace
-        </Link>
+        <div className="flex items-center gap-3">
+          <a
+            href={ABOUT_PAGE_URL}
+            className="rounded-full bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-indigo-700"
+          >
+            About this page
+          </a>
+          <Link href="/" className="text-lg font-bold tracking-tight text-slate-900">
+            🎨 Art Marketplace
+          </Link>
+        </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {userName && <span className="text-sm font-medium text-slate-700">Welcome {userName}</span>}
