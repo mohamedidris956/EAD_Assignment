@@ -47,6 +47,21 @@ exports.getUserPurchases = async (req, res) => {
   }
 };
 
+// DELETE purchases for one user
+exports.deleteUserPurchases = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const deleted = await Purchase.deleteMany({ userId });
+
+    res.json({
+      message: `Deleted ${deleted.deletedCount} purchase(s) for user ${userId}`,
+      deletedCount: deleted.deletedCount
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // GET top users by purchase count
 exports.getTopUsersStats = async (req, res) => {
   try {
@@ -80,7 +95,7 @@ exports.getTopUsersStats = async (req, res) => {
           totalSpent: Number(stats.totalSpent.toFixed(2))
         };
       })
-      .sort((a, b) => b.purchaseCount - a.purchaseCount || b.totalSpent - a.totalSpent);
+      .sort((a, b) => b.totalSpent - a.totalSpent || b.purchaseCount - a.purchaseCount);
 
     res.json(rankedUsers);
   } catch (error) {

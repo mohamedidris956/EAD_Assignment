@@ -24,6 +24,8 @@ if (!dataPath) {
 }
 
 const data = require(dataPath);
+const MAX_ARTISTS = 10_000;
+const limitedData = Array.isArray(data) ? data.slice(0, MAX_ARTISTS) : [];
 
 const normalizeImageUrl = (value) => {
   if (typeof value !== "string" || value.trim().length === 0) {
@@ -94,12 +96,13 @@ mongoose.connect(process.env.MONGO_URI)
     console.log("Connected to MongoDB");
     console.log(`Using seed file: ${dataPath}`);
     console.log(`Loaded ${data.length} records from JSON`);
+    console.log(`Using first ${limitedData.length} records for import`);
 
     // clear existing data
     await Artwork.deleteMany();
 
     // map dataset → your schema
-      const formattedData = data.map((item) => {
+      const formattedData = limitedData.map((item) => {
       let artist = "Unknown";
       if (Array.isArray(item.Artist)) {
         artist = item.Artist.join(", ");
